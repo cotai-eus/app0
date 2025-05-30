@@ -1,0 +1,126 @@
+groups:
+  - name: database_alerts
+    rules:
+      # PostgreSQL Alerts
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgresql
+        annotations:
+          summary: "PostgreSQL instance is down"
+          description: "PostgreSQL instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: postgresql
+        annotations:
+          summary: "PostgreSQL high number of connections"
+          description: "PostgreSQL instance {{ $labels.instance }} has {{ $value }} connections, which is above the threshold of 80."
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_database_xact_rollback_total[5m]) > 0.02
+        for: 5m
+        labels:
+          severity: warning
+          service: postgresql
+        annotations:
+          summary: "PostgreSQL high rollback rate"
+          description: "PostgreSQL instance {{ $labels.instance }} has a high rollback rate of {{ $value }} rollbacks/sec."
+
+      # MongoDB Alerts
+      - alert: MongoDBDown
+        expr: up{job="mongodb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: mongodb
+        annotations:
+          summary: "MongoDB instance is down"
+          description: "MongoDB instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: MongoDBHighConnections
+        expr: mongodb_connections{state="current"} > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: mongodb
+        annotations:
+          summary: "MongoDB high number of connections"
+          description: "MongoDB instance {{ $labels.instance }} has {{ $value }} connections, which is above the threshold of 80."
+
+      - alert: MongoDBHighMemoryUsage
+        expr: mongodb_memory_resident > 1073741824  # 1GB in bytes
+        for: 5m
+        labels:
+          severity: warning
+          service: mongodb
+        annotations:
+          summary: "MongoDB high memory usage"
+          description: "MongoDB instance {{ $labels.instance }} is using {{ $value | humanize1024 }} of resident memory."
+
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis instance is down"
+          description: "Redis instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: RedisHighMemoryUsage
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis instance {{ $labels.instance }} is using {{ $value }}% of its maximum memory."
+
+      - alert: RedisHighConnectedClients
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis high number of connected clients"
+          description: "Redis instance {{ $labels.instance }} has {{ $value }} connected clients, which is above the threshold of 100."
+
+      - alert: RedisLowHitRate
+        expr: (rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))) * 100 < 50
+        for: 10m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis low hit rate"
+          description: "Redis instance {{ $labels.instance }} has a low hit rate of {{ $value }}%, which is below the threshold of 50%."
+
+      # System Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage"
+          description: "System {{ $labels.instance }} has high CPU usage of {{ $value }}% for more than 10 minutes."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage"
+          description: "System {{ $labels.instance }} has high memory usage of {{ $value }}% for more than 10 minutes."

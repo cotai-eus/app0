@@ -1,0 +1,3 @@
+"""
+Common package - utilitários comuns
+"""

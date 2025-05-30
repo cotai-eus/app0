@@ -1,0 +1,363 @@
+# =====================================================
+# 🔴 REDIS - CONFIGURAÇÕES, PATTERNS E PUB/SUB
+# Cache, sessões, rate limiting e comunicação em tempo real
+# =====================================================
+
+# =================== CONFIGURAÇÃO REDIS ===================
+
+# Redis connection configuration
+redis.conf:
+  # Performance settings
+  maxmemory 4gb
+  maxmemory-policy allkeys-lru
+  save 900 1
+  save 300 10
+  save 60 10000
+  
+  # Network settings
+  tcp-keepalive 300
+  timeout 0
+  
+  # Security
+  requirepass your_secure_password_here
+  
+  # Logging
+  loglevel notice
+  logfile /var/log/redis/redis-server.log
+
+# =================== KEY PATTERNS E NAMESPACES ===================
+
+# 🔑 PADRÕES DE CHAVES
+
+# Sessions & Authentication
+session:user:{user_id}                          # TTL: 24h (86400s)
+session:active:{session_id}                     # TTL: 24h (86400s)
+session:temp:{temp_token}                       # TTL: 15min (900s)
+auth:token:{token_hash}                         # TTL: 1h (3600s)
+auth:refresh:{refresh_token_hash}               # TTL: 30d (2592000s)
+auth:reset:{reset_token}                        # TTL: 1h (3600s)
+auth:verification:{verification_token}          # TTL: 24h (86400s)
+
+# Rate Limiting
+rate_limit:user:{user_id}:{endpoint}            # TTL: 1h (3600s)
+rate_limit:ip:{ip_address}:{endpoint}           # TTL: 1h (3600s)
+rate_limit:company:{company_id}:{endpoint}      # TTL: 1h (3600s)
+rate_limit:global:{endpoint}                    # TTL: 1h (3600s)
+rate_limit:burst:{identifier}                   # TTL: 1min (60s)
+
+# Caching
+cache:user:{user_id}                            # TTL: 1h (3600s)
+cache:company:{company_id}                      # TTL: 2h (7200s)
+cache:document:{document_id}                    # TTL: 4h (14400s)
+cache:form:{form_id}                            # TTL: 1h (3600s)
+cache:api:{endpoint_hash}                       # TTL: 15min (900s)
+cache:search:{query_hash}                       # TTL: 30min (1800s)
+cache:report:{report_id}                        # TTL: 6h (21600s)
+
+# Real-time Data
+realtime:user:{user_id}:presence                # TTL: 5min (300s)
+realtime:company:{company_id}:online_users      # TTL: 1min (60s)
+realtime:notifications:{user_id}                # TTL: 24h (86400s)
+realtime:activity:{user_id}                     # TTL: 1h (3600s)
+
+# Temporary Data
+temp:upload:{upload_id}                         # TTL: 1h (3600s)
+temp:export:{export_id}                         # TTL: 24h (86400s)
+temp:processing:{job_id}                        # TTL: 4h (14400s)
+temp:share:{share_token}                        # TTL: 7d (604800s)
+
+# Locks & Coordination
+lock:document:{document_id}                     # TTL: 10min (600s)
+lock:form:{form_id}                             # TTL: 5min (300s)
+lock:processing:{resource_id}                   # TTL: 30min (1800s)
+lock:bulk_operation:{operation_id}              # TTL: 1h (3600s)
+
+# Counters & Statistics
+counter:api_calls:{endpoint}:{date}             # TTL: 30d (2592000s)
+counter:user_actions:{user_id}:{date}           # TTL: 30d (2592000s)
+counter:company_usage:{company_id}:{date}       # TTL: 90d (7776000s)
+stats:daily:{metric}:{date}                     # TTL: 1y (31536000s)
+stats:hourly:{metric}:{hour}                    # TTL: 30d (2592000s)
+
+# AI & Processing
+ai:queue:{priority}                             # Lista persistente
+ai:processing:{job_id}                          # TTL: 4h (14400s)
+ai:results:{job_id}                             # TTL: 24h (86400s)
+ai:model_cache:{model_id}                       # TTL: 12h (43200s)
+
+# =================== ESTRUTURAS DE DADOS ===================
+
+# Hash Structures
+HSET session:user:{user_id} 
+  "session_id" "{session_id}"
+  "user_agent" "{user_agent}"
+  "ip_address" "{ip_address}"
+  "created_at" "{timestamp}"
+  "last_activity" "{timestamp}"
+  "company_id" "{company_id}"
+  "permissions" "{json_permissions}"
+
+HSET cache:user:{user_id}
+  "id" "{user_id}"
+  "email" "{email}"
+  "name" "{name}"
+  "company_id" "{company_id}"
+  "role" "{role}"
+  "permissions" "{json_permissions}"
+  "preferences" "{json_preferences}"
+  "cached_at" "{timestamp}"
+
+# Rate Limiting Structure
+HSET rate_limit:user:{user_id}:{endpoint}
+  "count" "{current_count}"
+  "window_start" "{timestamp}"
+  "last_request" "{timestamp}"
+  "blocked_until" "{timestamp}"
+
+# Lists for Queues
+LPUSH queue:email "{json_email_data}"
+LPUSH queue:notifications "{json_notification_data}"
+LPUSH queue:ai_processing "{json_job_data}"
+LPUSH queue:file_processing "{json_file_data}"
+
+# Sets for Collections
+SADD online_users:company:{company_id} "{user_id}"
+SADD active_sessions:user:{user_id} "{session_id}"
+SADD permissions:user:{user_id} "{permission_name}"
+
+# Sorted Sets for Rankings/Scores
+ZADD leaderboard:company:{company_id} {score} "{user_id}"
+ZADD recent_documents:user:{user_id} {timestamp} "{document_id}"
+ZADD activity_score:daily {score} "{user_id}"
+
+# =================== PUB/SUB CHANNELS ===================
+
+# 📡 CANAIS DE COMUNICAÇÃO
+
+# User-specific channels
+channel:user:{user_id}:notifications
+channel:user:{user_id}:messages
+channel:user:{user_id}:updates
+channel:user:{user_id}:realtime
+
+# Company-wide channels
+channel:company:{company_id}:announcements
+channel:company:{company_id}:updates
+channel:company:{company_id}:activity
+channel:company:{company_id}:presence
+
+# System channels
+channel:system:alerts
+channel:system:maintenance
+channel:system:broadcasts
+channel:system:health
+
+# Feature-specific channels
+channel:documents:processing
+channel:documents:completed
+channel:forms:submissions
+channel:ai:jobs
+channel:ai:results
+channel:reports:generated
+
+# Admin channels
+channel:admin:logs
+channel:admin:monitoring
+channel:admin:errors
+channel:admin:performance
+
+# =================== REDIS SCRIPTS PARA OPERAÇÕES ATÔMICAS ===================
+
+# Rate Limiting Script (Lua)
+rate_limit_script = """
+local key = KEYS[1]
+local limit = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local current_time = tonumber(ARGV[3])
+
+local current = redis.call('HGET', key, 'count')
+local window_start = redis.call('HGET', key, 'window_start')
+
+if not current then
+    current = 0
+    window_start = current_time
+else
+    current = tonumber(current)
+    window_start = tonumber(window_start)
+end
+
+if current_time - window_start > window then
+    current = 0
+    window_start = current_time
+end
+
+if current >= limit then
+    return {0, current, limit - current}
+end
+
+current = current + 1
+redis.call('HSET', key, 'count', current)
+redis.call('HSET', key, 'window_start', window_start)
+redis.call('HSET', key, 'last_request', current_time)
+redis.call('EXPIRE', key, window)
+
+return {1, current, limit - current}
+"""
+
+# Session Management Script
+session_script = """
+local session_key = KEYS[1]
+local user_sessions_key = KEYS[2]
+local session_id = ARGV[1]
+local user_id = ARGV[2]
+local ttl = tonumber(ARGV[3])
+
+-- Add session to user's active sessions
+redis.call('SADD', user_sessions_key, session_id)
+redis.call('EXPIRE', user_sessions_key, ttl)
+
+-- Set session data
+redis.call('HSET', session_key, 
+    'user_id', user_id,
+    'created_at', redis.call('TIME')[1],
+    'last_activity', redis.call('TIME')[1])
+redis.call('EXPIRE', session_key, ttl)
+
+return 'OK'
+"""
+
+# Cache Invalidation Script
+cache_invalidation_script = """
+local pattern = KEYS[1]
+local keys = redis.call('KEYS', pattern)
+
+if #keys > 0 then
+    redis.call('DEL', unpack(keys))
+    return #keys
+else
+    return 0
+end
+"""
+
+# =================== CONFIGURAÇÕES DE CLUSTERS ===================
+
+# Redis Cluster Configuration
+cluster_nodes:
+  - host: redis-node-1
+    port: 7001
+    role: master
+  - host: redis-node-2
+    port: 7002
+    role: master
+  - host: redis-node-3
+    port: 7003
+    role: master
+  - host: redis-node-4
+    port: 7004
+    role: slave
+  - host: redis-node-5
+    port: 7005
+    role: slave
+  - host: redis-node-6
+    port: 7006
+    role: slave
+
+# Sentinel Configuration
+sentinel_nodes:
+  - host: redis-sentinel-1
+    port: 26379
+  - host: redis-sentinel-2
+    port: 26380
+  - host: redis-sentinel-3
+    port: 26381
+
+# =================== MONITORING E HEALTH CHECKS ===================
+
+# Health Check Commands
+healthcheck_commands:
+  - PING
+  - INFO replication
+  - INFO memory
+  - INFO stats
+  - LASTSAVE
+
+# Monitoring Metrics
+monitoring_keys:
+  - info:memory:used_memory
+  - info:stats:total_connections_received
+  - info:stats:total_commands_processed
+  - info:replication:role
+  - info:persistence:rdb_last_save_time
+
+# Alerts Configuration
+alerts:
+  memory_usage_threshold: 80%
+  connection_threshold: 1000
+  slow_query_threshold: 100ms
+  replication_lag_threshold: 5s
+
+# =================== BACKUP E PERSISTENCE ===================
+
+# Backup Configuration
+backup_schedule:
+  full_backup: "0 2 * * *"  # Daily at 2 AM
+  incremental: "0 */6 * * *" # Every 6 hours
+
+persistence_config:
+  rdb_enabled: true
+  rdb_filename: "dump.rdb"
+  rdb_compression: true
+  rdb_checksum: true
+  
+  aof_enabled: true
+  aof_filename: "appendonly.aof"
+  aof_fsync: "everysec"
+  aof_rewrite_percentage: 100
+  aof_rewrite_min_size: 64mb
+
+# =================== SECURITY ===================
+
+security_config:
+  # Authentication
+  require_auth: true
+  password_complexity: high
+  
+  # Network Security
+  bind_addresses: ["127.0.0.1", "10.0.0.0/8"]
+  protected_mode: true
+  tcp_keepalive: 300
+  
+  # Command Security
+  disabled_commands:
+    - FLUSHDB
+    - FLUSHALL
+    - SHUTDOWN
+    - CONFIG
+    - DEBUG
+  
+  # SSL/TLS
+  tls_enabled: true
+  tls_cert_file: "/etc/redis/tls/redis.crt"
+  tls_key_file: "/etc/redis/tls/redis.key"
+  tls_ca_cert_file: "/etc/redis/tls/ca.crt"
+
+# =================== PERFORMANCE TUNING ===================
+
+performance_config:
+  # Memory Management
+  maxmemory_policy: "allkeys-lru"
+  maxmemory_samples: 5
+  
+  # Network Optimization
+  tcp_nodelay: true
+  tcp_keepalive: 300
+  
+  # Threading
+  io_threads: 4
+  io_threads_do_reads: true
+  
+  # Slow Log
+  slowlog_log_slower_than: 10000  # microseconds
+  slowlog_max_len: 128
+
+print("✅ Redis configuration, key patterns, and Pub/Sub channels defined!")

@@ -1,0 +1,17 @@
+{
+	"ulid": "01JWHHBZRSA4MRN22SPA1XKQS4",
+	"minTime": 1748628000000,
+	"maxTime": 1748635200000,
+	"stats": {
+		"numSamples": 94371,
+		"numSeries": 379,
+		"numChunks": 1137
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01JWHHBZRSA4MRN22SPA1XKQS4"
+		]
+	},
+	"version": 1
+}
