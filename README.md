@@ -471,3 +471,5 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 **Versão**: 1.0.0  
 **Última atualização**: 30 de Maio de 2025  
 **Mantido por**: Equipe de Desenvolvimento
+#   a p p 0  
+ 
