@@ -1,0 +1,131 @@
+{
+  "timestamp": "2025-05-31T11:46:50.794656",
+  "status": "PARTIAL",
+  "summary": {
+    "total_tests": 18,
+    "passed_tests": 17,
+    "failed_tests": 1,
+    "success_rate": 94.44444444444444
+  },
+  "results": {
+    "infrastructure": {
+      "Directory llm/": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Path exists: \\\\wsl.localhost\\Ubuntu-20.04\\home\\app\\llm",
+        "timestamp": "2025-05-31T11:45:20.545086"
+      },
+      "Directory llm/services/": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Path exists: \\\\wsl.localhost\\Ubuntu-20.04\\home\\app\\llm\\services",
+        "timestamp": "2025-05-31T11:45:20.553765"
+      },
+      "Directory backend/app/core/": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Path exists: \\\\wsl.localhost\\Ubuntu-20.04\\home\\app\\backend\\app\\core",
+        "timestamp": "2025-05-31T11:45:20.559509"
+      },
+      "Directory backend/requirements.txt": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Path exists: \\\\wsl.localhost\\Ubuntu-20.04\\home\\app\\backend\\requirements.txt",
+        "timestamp": "2025-05-31T11:45:20.566277"
+      },
+      "File llm/__init__.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 2963 bytes",
+        "timestamp": "2025-05-31T11:45:20.577571"
+      },
+      "File llm/manager.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 14029 bytes",
+        "timestamp": "2025-05-31T11:45:20.590179"
+      },
+      "File llm/models.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 2324 bytes",
+        "timestamp": "2025-05-31T11:45:20.603625"
+      },
+      "File llm/api.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 13967 bytes",
+        "timestamp": "2025-05-31T11:45:20.615688"
+      },
+      "File llm/services/ai_processing.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 13347 bytes",
+        "timestamp": "2025-05-31T11:45:20.628091"
+      },
+      "File llm/services/text_extraction.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 9690 bytes",
+        "timestamp": "2025-05-31T11:45:20.639369"
+      },
+      "File llm/services/cache.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 10075 bytes",
+        "timestamp": "2025-05-31T11:45:20.648303"
+      },
+      "File docker-compose.yml": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 7781 bytes",
+        "timestamp": "2025-05-31T11:45:20.659317"
+      }
+    },
+    "services": {
+      "Ollama Connection": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Connected, Models: ['llama3.2:3b', 'llama3:8b']",
+        "timestamp": "2025-05-31T11:45:21.857197"
+      }
+    },
+    "models": {
+      "Model llama3:8b": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Available: True",
+        "timestamp": "2025-05-31T11:45:21.857405"
+      },
+      "Model llama3.2:3b": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Available: True",
+        "timestamp": "2025-05-31T11:45:21.857592"
+      }
+    },
+    "functionality": {
+      "Simple Generation": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Response: 'OK. Estou pronto para ajudar.'",
+        "timestamp": "2025-05-31T11:45:25.368448"
+      },
+      "Structured Extraction": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "JSON structure detected in response",
+        "timestamp": "2025-05-31T11:45:49.916653"
+      }
+    },
+    "performance": {
+      "Performance Test": {
+        "status": "❌ FAIL",
+        "success": false,
+        "details": "",
+        "timestamp": "2025-05-31T11:46:50.771328"
+      }
+    }
+  },
+  "critical_failures": []
+}

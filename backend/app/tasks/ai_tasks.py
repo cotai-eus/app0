@@ -1,8 +1,10 @@
 """
-AI Processing Tasks for Celery.
+AI Processing Tasks for Celery with LLM Integration.
 """
 
 import asyncio
+import sys
+import os
 from typing import Dict, Any, List, Optional
 from uuid import UUID
 
@@ -24,6 +26,19 @@ from app.domains.documents.schemas import (
     BulkProcessingRequest,
 )
 from app.core.logging import get_logger_with_context
+
+# Add LLM module to path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, project_root)
+
+try:
+    from llm.manager import LLMManager
+    from llm.models import AIProcessingResult, ExtractedTenderData
+    from llm.exceptions import LLMException
+    llm_available = True
+except ImportError as e:
+    logger.warning(f"LLM module not available: {e}")
+    llm_available = False
 
 logger = get_logger_with_context(component="ai_tasks")
 

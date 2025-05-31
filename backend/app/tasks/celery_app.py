@@ -19,6 +19,7 @@ celery_app = Celery(
         "app.tasks.email_tasks",
         "app.tasks.report_tasks",
         "app.tasks.maintenance_tasks",
+        "app.tasks.llm_tasks",  # New LLM-specific tasks
     ]
 )
 
@@ -42,6 +43,7 @@ celery_app.conf.update(
     # Routing
     task_routes={
         "app.tasks.ai_tasks.*": {"queue": "ai_tasks"},
+        "app.tasks.llm_tasks.*": {"queue": "llm_tasks"},  # New LLM queue
         "app.tasks.email_tasks.*": {"queue": "email_tasks"},
         "app.tasks.report_tasks.*": {"queue": "report_tasks"},
         "app.tasks.maintenance_tasks.*": {"queue": "maintenance_tasks"},

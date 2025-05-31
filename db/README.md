@@ -109,7 +109,7 @@ Os dados são persistidos nas pastas `data/` usando bind mounts para facilitar b
 ./manage_databases.sh backup
 
 # Backup individual
-./frontend/scripts/backup_databases.sh postgres
+./db/scripts/backup_databases.sh postgres
 ```
 
 ### Monitoramento

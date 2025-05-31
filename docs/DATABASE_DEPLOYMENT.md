@@ -186,12 +186,12 @@ export REDIS_PASSWORD="redis_password_here"
 ./manage_databases.sh init
 
 # Método 2: Script específico de inicialização
-./frontend/scripts/init_databases.sh
+./db/scripts/init_databases.sh
 
 # Método 3: Inicialização individual
-./frontend/scripts/init_databases.sh postgres
-./frontend/scripts/init_databases.sh mongodb
-./frontend/scripts/init_databases.sh redis
+./db/scripts/init_databases.sh postgres
+./db/scripts/init_databases.sh mongodb
+./db/scripts/init_databases.sh redis
 ```
 
 ## 🔧 Configuração de Produção

@@ -87,7 +87,7 @@
 - **PostgreSQL Data:** `./db/data/postgres`
 - **MongoDB Data:** `./db/data/mongodb`
 - **Redis Data:** `./db/data/redis`
-- **Grafana Data:** `./frontend/data/grafana`
+- **Grafana Data:** `./db/data/grafana`
 - **Prometheus Data:** `./db/data/prometheus`
 
 ## 🚀 Quick Start Commands

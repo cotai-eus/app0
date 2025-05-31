@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 # Configuration
 PROJECT_NAME="multi-database-app"
 COMPOSE_FILE="docker-compose.yml"
-BACKUP_DIR="./frontend/backups"
+BACKUP_DIR="./db/backups"
 LOG_DIR="./backend/logs"
 
 # =================== HELPER FUNCTIONS ===================

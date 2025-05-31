@@ -1,15 +1,43 @@
 version: '3.8'
 
 # =====================================================
-# 🐳 DOCKER COMPOSE - ARQUITETURA MULTI-DATABASE
-# PostgreSQL + MongoDB + Redis para desenvolvimento
+# 🐳 DOCKER COMPOSE - COTAI BACKEND ARCHITECTURE
+# PostgreSQL + MongoDB + Redis + LLM + Monitoring + Backend
 # =====================================================
 
 services:
+  # =================== BACKEND API ===================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: cotai_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    networks:
+      - app_network
+    labels:
+      - "project=cotai-backend"
+      - "service=api"
   # =================== POSTGRESQL ===================
   postgres:
     image: postgres:15-alpine
-    container_name: app_postgres
+    container_name: cotai_postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: app_relational
@@ -18,8 +46,8 @@ services:
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./frontend/scripts/postgresql_complete_schema.sql:/docker-entrypoint-initdb.d/01-init-schema.sql
       - ./db/postgres-config/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./db/scripts:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
@@ -30,16 +58,14 @@ services:
       start_period: 30s
     networks:
       - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
+    labels:
+      - "project=cotai-backend"
+      - "service=database"
+      - "database=postgresql"
   # =================== MONGODB ===================
   mongodb:
     image: mongo:7.0
-    container_name: app_mongodb
+    container_name: cotai_mongodb
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
@@ -48,11 +74,9 @@ services:
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
-      - ./frontend/scripts/mongodb_schemas.js:/docker-entrypoint-initdb.d/mongodb_schemas.js
-      - ./db/mongo-config/mongod.conf:/etc/mongod.conf
+      - ./db/mongo-config/mongod.conf:/etc/mongo/mongod.conf
     ports:
       - "27017:27017"
-    command: mongod --config /etc/mongod.conf
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 30s
@@ -61,29 +85,28 @@ services:
       start_period: 40s
     networks:
       - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
+    labels:
+      - "project=cotai-backend"
+      - "service=database"
+      - "database=mongodb"
   # =================== REDIS ===================
   redis:
     image: redis:7.0-alpine
-    container_name: app_redis
+    container_name: cotai_redis
     restart: unless-stopped
     command: >
-      redis-server 
+      redis-server /etc/redis/redis.conf
       --requirepass redis_password_here
       --maxmemory 512mb
       --maxmemory-policy allkeys-lru
       --save 900 1
       --save 300 10
-      --save 60 10000      --appendonly yes
+      --save 60 10000
+      --appendonly yes
       --appendfsync everysec
     volumes:
       - redis_data:/data
-      - ./db/redis-config/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./db/redis-config/redis.conf:/etc/redis/redis.conf
     ports:
       - "6379:6379"
     healthcheck:
@@ -94,16 +117,47 @@ services:
       start_period: 30s
     networks:
       - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    labels:
+      - "project=cotai-backend"
+      - "service=cache"
+      - "database=redis"
+  # =================== LLM SYSTEM (OLLAMA) ===================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: cotai_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    environment:
+      OLLAMA_HOST: "0.0.0.0"
+      OLLAMA_NUM_PARALLEL: 2
+      OLLAMA_MAX_LOADED_MODELS: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - app_network
+    labels:
+      - "project=cotai-backend"
+      - "service=llm"
+      - "ai=ollama"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   # =================== ADMINER (DATABASE ADMIN) ===================
   adminer:
     image: adminer:4.8.1
-    container_name: app_adminer
+    container_name: cotai_adminer
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -112,19 +166,17 @@ services:
       ADMINER_DESIGN: "nette"
     depends_on:
       - postgres
-      - mongodb
     networks:
       - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
+    labels:
+      - "project=cotai-backend"
+      - "service=admin"
+      - "interface=database"
 
   # =================== MONGO EXPRESS (MONGODB ADMIN) ===================
   mongo-express:
     image: mongo-express:1.0.0-alpha
-    container_name: app_mongo_express
+    container_name: cotai_mongo_express
     restart: unless-stopped
     ports:
       - "8081:8081"
@@ -138,16 +190,15 @@ services:
       - mongodb
     networks:
       - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
+    labels:
+      - "project=cotai-backend"
+      - "service=admin"
+      - "interface=mongodb"
 
   # =================== REDIS COMMANDER (REDIS ADMIN) ===================
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: app_redis_commander
+    container_name: cotai_redis_commander
     restart: unless-stopped
     ports:
       - "8082:8081"
@@ -159,216 +210,62 @@ services:
       - redis
     networks:
       - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
+    labels:
+      - "project=cotai-backend"
+      - "service=admin"
+      - "interface=redis"
   # =================== GRAFANA (MONITORING) ===================
   grafana:
     image: grafana/grafana:10.2.0
-    container_name: app_grafana
+    container_name: cotai_grafana
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin123
       GF_USERS_ALLOW_SIGN_UP: false
-      GF_INSTALL_PLUGINS: grafana-piechart-panel,grafana-worldmap-panel
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./frontend/grafana-config/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - postgres
-      - mongodb
-      - redis
+      - ./db/grafana-config:/etc/grafana
+      - ./db/provisioning:/etc/grafana/provisioning
     networks:
       - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
+    labels:
+      - "project=cotai-backend"
+      - "service=monitoring"
+      - "interface=grafana"
   # =================== PROMETHEUS (METRICS) ===================
   prometheus:
     image: prom/prometheus:v2.45.0
-    container_name: app_prometheus
+    container_name: cotai_prometheus
     restart: unless-stopped
     ports:
       - "9090:9090"
     volumes:
       - prometheus_data:/prometheus
       - ./db/prometheus-config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./db/prometheus-config/rules:/etc/prometheus/rules
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
     networks:
       - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-  # =================== POSTGRES EXPORTER ===================
-  postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:v0.13.2
-    container_name: app_postgres_exporter
-    restart: unless-stopped
-    environment:
-      DATA_SOURCE_NAME: "postgresql://app_user:secure_password_here@postgres:5432/app_relational?sslmode=disable"
-    ports:
-      - "9187:9187"
-    depends_on:
-      - postgres
-    networks:
-      - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
-  # =================== MONGODB EXPORTER ===================
-  mongodb-exporter:
-    image: percona/mongodb_exporter:0.39.0
-    container_name: app_mongodb_exporter
-    restart: unless-stopped
-    environment:
-      MONGODB_URI: "mongodb://admin:secure_password_here@mongodb:27017"
-    ports:
-      - "9216:9216"
-    command:
-      - '--mongodb.uri=mongodb://admin:secure_password_here@mongodb:27017'
-      - '--mongodb.collstats-colls=app_flexible.*'
-      - '--web.listen-address=:9216'
-    depends_on:
-      - mongodb
-    networks:
-      - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
-  # =================== REDIS EXPORTER ===================
-  redis-exporter:
-    image: oliver006/redis_exporter:v1.53.0
-    container_name: app_redis_exporter
-    restart: unless-stopped
-    environment:
-      REDIS_ADDR: "redis://redis:6379"
-      REDIS_PASSWORD: "redis_password_here"
-    ports:
-      - "9121:9121"
-    depends_on:
-      - redis
-    networks:
-      - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
-  # =================== NODE EXPORTER ===================
-  node-exporter:
-    image: prom/node-exporter:v1.6.1
-    container_name: app_node_exporter
-    restart: unless-stopped
-    ports:
-      - "9100:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    networks:
-      - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
-  # =================== NGINX (REVERSE PROXY) ===================
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: app_nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./frontend/nginx-config/nginx.conf:/etc/nginx/nginx.conf
-      - ./frontend/nginx-config/conf.d:/etc/nginx/conf.d
-      - ./frontend/ssl-certs:/etc/nginx/ssl
-    depends_on:
-      - adminer
-      - mongo-express
-      - redis-commander
-      - grafana
-    networks:
-      - app_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    labels:
+      - "project=cotai-backend"
+      - "service=monitoring"
+      - "interface=prometheus"
 
 # =================== VOLUMES ===================
 volumes:
   postgres_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./db/data/postgres
-
   mongodb_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./db/data/mongodb
-
   mongodb_config:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./db/data/mongodb-config
-
   redis_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./db/data/redis
-
   grafana_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./frontend/data/grafana
-
   prometheus_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./db/data/prometheus
+  ollama_models:
 
 # =================== NETWORKS ===================
 networks:
@@ -377,28 +274,6 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
-
-# =================== CONFIGURAÇÕES EXTRAS ===================
-
-# Labels para organização
-x-common-labels: &common-labels
-  project: "multi-database-app"
-  environment: "development"
-  maintainer: "dev-team"
-
-# Recursos padrão
-x-common-resources: &common-resources
-  deploy:
-    resources:
-      limits:
-        memory: 1G
-      reservations:
-        memory: 512M
-
-# Logging padrão
-x-common-logging: &common-logging
-  logging:
-    driver: "json-file"
-    options:
-      max-size: "10m"
-      max-file: "3"
+    labels:
+      - "project=cotai-backend"
+      - "network=main"

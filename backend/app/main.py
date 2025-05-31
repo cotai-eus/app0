@@ -22,6 +22,20 @@ try:
     from app.api.v1.endpoints import auth, companies, tenders, forms, kanban, documents, monitoring, files, audit
 except ImportError:
     auth = companies = tenders = forms = kanban = documents = monitoring = files = audit = None
+
+# Import LLM API module
+try:
+    import sys
+    import os
+    # Add the project root to Python path for LLM imports
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.insert(0, project_root)
+    from llm.api import router as llm_router
+    llm_available = True
+except ImportError as e:
+    logger.warning(f"LLM module not available: {e}")
+    llm_router = None
+    llm_available = False
 from app.core.config import settings
 from app.core.database import init_db, close_db
 from app.core.mongodb import init_mongodb, close_mongodb
@@ -45,12 +59,31 @@ async def lifespan(app: FastAPI):
     await init_mongodb()
     await init_redis()
     
+    # Initialize LLM services if available
+    if llm_available:
+        try:
+            from llm.manager import LLMManager
+            llm_manager = LLMManager()
+            await llm_manager.__aenter__()
+            app.state.llm_manager = llm_manager
+            logger.info("LLM services initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize LLM services: {e}")
+    
     logger.info("CotAi Backend started successfully")
     
     yield
     
     # Shutdown
     logger.info("Shutting down CotAi Backend...")
+    
+    # Close LLM services if available
+    if llm_available and hasattr(app.state, 'llm_manager'):
+        try:
+            await app.state.llm_manager.__aexit__(None, None, None)
+            logger.info("LLM services shutdown successfully")
+        except Exception as e:
+            logger.warning(f"Error shutting down LLM services: {e}")
     
     # Close database connections
     await close_db()
@@ -161,6 +194,14 @@ def create_application() -> FastAPI:
             audit.router,
             prefix=f"{settings.API_V1_STR}/audit",
             tags=["audit", "compliance"],
+        )
+    
+    # Include LLM router
+    if llm_available and llm_router:
+        app.include_router(
+            llm_router,
+            prefix=f"{settings.API_V1_STR}/llm",
+            tags=["llm", "ai", "document-processing"],
         )
     
     return app
