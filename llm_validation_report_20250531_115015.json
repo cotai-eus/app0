@@ -1,0 +1,131 @@
+{
+  "timestamp": "2025-05-31T11:50:15.557060",
+  "status": "PARTIAL",
+  "summary": {
+    "total_tests": 18,
+    "passed_tests": 16,
+    "failed_tests": 2,
+    "success_rate": 88.88888888888889
+  },
+  "results": {
+    "infrastructure": {
+      "Directory llm/": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Path exists: \\\\wsl.localhost\\Ubuntu-20.04\\home\\app\\llm",
+        "timestamp": "2025-05-31T11:48:39.663628"
+      },
+      "Directory llm/services/": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Path exists: \\\\wsl.localhost\\Ubuntu-20.04\\home\\app\\llm\\services",
+        "timestamp": "2025-05-31T11:48:39.667698"
+      },
+      "Directory backend/app/core/": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Path exists: \\\\wsl.localhost\\Ubuntu-20.04\\home\\app\\backend\\app\\core",
+        "timestamp": "2025-05-31T11:48:39.671576"
+      },
+      "Directory backend/requirements.txt": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Path exists: \\\\wsl.localhost\\Ubuntu-20.04\\home\\app\\backend\\requirements.txt",
+        "timestamp": "2025-05-31T11:48:39.675508"
+      },
+      "File llm/__init__.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 2963 bytes",
+        "timestamp": "2025-05-31T11:48:39.683037"
+      },
+      "File llm/manager.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 14029 bytes",
+        "timestamp": "2025-05-31T11:48:39.691265"
+      },
+      "File llm/models.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 2324 bytes",
+        "timestamp": "2025-05-31T11:48:39.698528"
+      },
+      "File llm/api.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 13967 bytes",
+        "timestamp": "2025-05-31T11:48:39.707813"
+      },
+      "File llm/services/ai_processing.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 13347 bytes",
+        "timestamp": "2025-05-31T11:48:39.715667"
+      },
+      "File llm/services/text_extraction.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 9690 bytes",
+        "timestamp": "2025-05-31T11:48:39.728172"
+      },
+      "File llm/services/cache.py": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 10075 bytes",
+        "timestamp": "2025-05-31T11:48:39.740873"
+      },
+      "File docker-compose.yml": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Size: 7781 bytes",
+        "timestamp": "2025-05-31T11:48:39.754118"
+      }
+    },
+    "services": {
+      "Ollama Connection": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Connected, Models: ['llama3.2:3b', 'llama3:8b']",
+        "timestamp": "2025-05-31T11:48:41.018982"
+      }
+    },
+    "models": {
+      "Model llama3:8b": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Available: True",
+        "timestamp": "2025-05-31T11:48:41.019237"
+      },
+      "Model llama3.2:3b": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Available: True",
+        "timestamp": "2025-05-31T11:48:41.019384"
+      }
+    },
+    "functionality": {
+      "Simple Generation": {
+        "status": "✅ PASS",
+        "success": true,
+        "details": "Response: 'OK. Posso ajudá-lo com algo?'",
+        "timestamp": "2025-05-31T11:48:44.461581"
+      },
+      "LLM Generation": {
+        "status": "❌ FAIL",
+        "success": false,
+        "details": "",
+        "timestamp": "2025-05-31T11:49:14.465403"
+      }
+    },
+    "performance": {
+      "Performance Test": {
+        "status": "❌ FAIL",
+        "success": false,
+        "details": "",
+        "timestamp": "2025-05-31T11:50:15.465440"
+      }
+    }
+  },
+  "critical_failures": []
+}

@@ -19,7 +19,7 @@ from .services import (
     monitoring_service
 )
 from .models import AIProcessingResult, ExtractedTenderData, QuotationStructure
-from .exceptions import AIProcessingError, ModelUnavailableError
+from .exceptions import AIProcessingError, ModelUnavailableException
 from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 
 class LLMServiceManager:
     """Main service manager for all LLM operations."""
-    
-    def __init__(self):        self.text_extraction = TextExtractionService()
+      def __init__(self):
+        self.text_extraction = TextExtractionService()
         self.ai_processing = AIProcessingService()
         self.prompt_manager = PromptManagerService()
         self.health_check = HealthCheckService()
