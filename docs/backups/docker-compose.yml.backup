@@ -120,39 +120,8 @@ services:
     labels:
       - "project=cotai-backend"
       - "service=cache"
-      - "database=redis"  # =================== LLM SERVICE ===================
-  llm-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: llm-processor
-    container_name: cotai_llm_service
-    restart: unless-stopped
-    ports:
-      - "8001:8001"
-    env_file:
-      - .env
-    volumes:
-      - .:/app
-      - llm_models:/app/models
-    depends_on:
-      redis:
-        condition: service_healthy
-      ollama:
-        condition: service_healthy
-    networks:
-      - app_network
-    labels:
-      - "project=cotai-backend"
-      - "service=llm-api"
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-        reservations:
-          memory: 2G
-
-  # =================== OLLAMA LLM ENGINE ===================
+      - "database=redis"
+  # =================== LLM SYSTEM (OLLAMA) ===================
   ollama:
     image: ollama/ollama:latest
     container_name: cotai_ollama
@@ -167,10 +136,7 @@ services:
       OLLAMA_MAX_LOADED_MODELS: 2
     deploy:
       resources:
-        limits:
-          memory: 8G
         reservations:
-          memory: 4G
           devices:
             - driver: nvidia
               count: 1
@@ -187,92 +153,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-
-  # =================== CELERY WORKER ===================
-  celery-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: celery-worker
-    container_name: cotai_celery_worker
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - .:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app_network
-    labels:
-      - "project=cotai-backend"
-      - "service=worker"
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-        reservations:
-          memory: 1G
-
-  # =================== CELERY BEAT SCHEDULER ===================
-  celery-beat:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: celery-beat
-    container_name: cotai_celery_beat
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - .:/app
-      - celery_beat_data:/app/celerybeat-schedule
-    depends_on:
-      postgres:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app_network
-    labels:
-      - "project=cotai-backend"
-      - "service=scheduler"
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
-
-  # =================== FLOWER (CELERY MONITORING) ===================
-  flower:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: cotai_flower
-    restart: unless-stopped
-    ports:
-      - "5555:5555"
-    env_file:
-      - .env
-    command: ["poetry", "run", "celery", "-A", "app.tasks.celery_app", "flower", "--port=5555"]
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - app_network
-    labels:
-      - "project=cotai-backend"
-      - "service=monitoring"
-      - "interface=flower"
 
   # =================== ADMINER (DATABASE ADMIN) ===================
   adminer:
@@ -386,8 +266,6 @@ volumes:
   grafana_data:
   prometheus_data:
   ollama_models:
-  llm_models:
-  celery_beat_data:
 
 # =================== NETWORKS ===================
 networks:
